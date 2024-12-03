@@ -13,8 +13,8 @@ fn parse_field(text: &str) -> i32 {
 
 fn count_multiples(contents: &str, use_switch: bool) -> i32 {
     let re = Regex::new(r"mul\((\d+),(\d+)\)|(do)(\(\))|(don't)(\(\))").unwrap();
-    let mut fields = vec![];
     let mut active = true;
+    let mut total = 0;
     for (_, [a, b]) in re.captures_iter(contents).map(|c| c.extract()) {
         match a {
             "do" => {
@@ -25,15 +25,10 @@ fn count_multiples(contents: &str, use_switch: bool) -> i32 {
             }
             _ => {
                 if active || !use_switch {
-                    fields.push((parse_field(a), parse_field(b)));
+                    total += parse_field(a) * parse_field(b);
                 }
             }
         }
-    }
-
-    let mut total = 0;
-    for (a, b) in fields {
-        total += a * b;
     }
     total
 }
