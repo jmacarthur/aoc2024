@@ -1,15 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-fn parse_field(text: &str) -> i32 {
-    match text.parse() {
-        Ok(i) => i,
-        Err(_) => {
-            panic!("Unreadable number {}", text);
-        }
-    }
-}
-
 struct Grid<'a> {
     rows: Vec<&'a str>
 }
@@ -22,6 +13,12 @@ impl <'a> Grid<'a> {
             self.rows[TryInto::<usize>::try_into(y).unwrap()].chars().nth(x.try_into().unwrap())
         }
     }
+    fn width(&self) -> i32 {
+        self.rows[0].len().try_into().unwrap()
+    }
+    fn height(&self) -> i32 {
+        self.rows.len().try_into().unwrap()
+    }
 }
 
 fn main() -> std::io::Result<()> {
@@ -33,23 +30,23 @@ fn main() -> std::io::Result<()> {
     for row in row_iterator {
         if row.len() > 0 {
             row_vector.push(row);
+
+            // Check all rows are the same length
             assert!(row_vector[0].len() == row.len());
         }
     }
-    let mut grid = Grid { rows: row_vector };
+    let grid = Grid { rows: row_vector };
     
-    let wordsearch_directions = [ (1i32,0i32), (1,-1), (0,-1), (-1,-1), (-1,0), (-1,1), (0,1), (1,1) ];
+    let wordsearch_directions = [ (1i32, 0i32), (1,-1), (0,-1), (-1,-1), (-1,0), (-1,1), (0,1), (1,1) ];
     let target = "XMAS";
     let mut match_count = 0;
-    for startx in 0..grid.rows[0].len() {
-        let startx_i: i32 = startx.try_into().unwrap();        
-        for starty in 0..grid.rows.len() {
-            let starty_i: i32 = starty.try_into().unwrap();
+    for startx in 0i32..grid.width() {
+        for starty in 0i32..grid.height() {
             for (dx, dy) in wordsearch_directions {
                 if 'search: loop {
                     for step in 0i32..4 {
                         let step_usize = TryInto::<usize>::try_into(step).unwrap();
-                        if grid.get(startx_i + dx * step, starty_i + dy * step) != target.chars().nth(step_usize) {
+                        if grid.get(startx + dx * step, starty + dy * step) != target.chars().nth(step_usize) {
                             break 'search false;
                         }
                     }
@@ -64,16 +61,14 @@ fn main() -> std::io::Result<()> {
 
     let cross_directions = [ (1i32, 1i32), (-1,1) ];
     let mut cross_match_count = 0;
-    for startx in 0..grid.rows[0].len() {
-        let startx_i: i32 = startx.try_into().unwrap();        
-        for starty in 0..grid.rows.len() {
-            let starty_i: i32 = starty.try_into().unwrap();
-            if grid.get(startx_i, starty_i) == Some('A') {
+    for startx in 0i32..grid.width() {
+        for starty in 0i32..grid.height() {
+            if grid.get(startx, starty) == Some('A') {
                 let mut matches = true;
                 for (dx, dy) in cross_directions {
-                    if grid.get(startx_i + dx, starty_i + dy) == Some('M') && grid.get(startx_i - dx, starty_i - dy) == Some('S') {
-                    } else if grid.get(startx_i + dx, starty_i + dy) == Some('S') && grid.get(startx_i - dx, starty_i - dy) == Some('M') {
-                    } else {
+                    let c1 = grid.get(startx + dx, starty + dy);
+                    let c2 = grid.get(startx - dx, starty - dy);
+                    if ! ( ( c1 == Some('S') && c2 == Some('M') ) || ( c1 == Some('M') && c2 == Some('S') )) {
                         matches = false;
                     }
                 }
