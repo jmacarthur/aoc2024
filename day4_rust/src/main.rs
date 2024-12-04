@@ -2,15 +2,18 @@ use std::fs::File;
 use std::io::prelude::*;
 
 struct Grid<'a> {
-    rows: Vec<&'a str>
+    rows: Vec<&'a str>,
 }
 
-impl <'a> Grid<'a> {
+impl<'a> Grid<'a> {
     fn get(&self, x: i32, y: i32) -> Option<char> {
-        if y < 0 || TryInto::<usize>::try_into(y).unwrap() >= self.rows.len() || x < 0 {
+        if y < 0 || y >= self.height() || x < 0 {
+            // No need to check x >= width, as nth will just return None
             None
         } else {
-            self.rows[TryInto::<usize>::try_into(y).unwrap()].chars().nth(x.try_into().unwrap())
+            self.rows[TryInto::<usize>::try_into(y).unwrap()]
+                .chars()
+                .nth(x.try_into().unwrap())
         }
     }
     fn width(&self) -> i32 {
@@ -28,7 +31,7 @@ fn main() -> std::io::Result<()> {
     let row_iterator = contents.split('\n');
     let mut row_vector = vec![];
     for row in row_iterator {
-        if row.len() > 0 {
+        if !row.is_empty() {
             row_vector.push(row);
 
             // Check all rows are the same length
@@ -36,22 +39,34 @@ fn main() -> std::io::Result<()> {
         }
     }
     let grid = Grid { rows: row_vector };
-    
-    let wordsearch_directions = [ (1i32, 0i32), (1,-1), (0,-1), (-1,-1), (-1,0), (-1,1), (0,1), (1,1) ];
+
+    let wordsearch_directions = [
+        (1i32, 0i32),
+        (1, -1),
+        (0, -1),
+        (-1, -1),
+        (-1, 0),
+        (-1, 1),
+        (0, 1),
+        (1, 1),
+    ];
     let target = "XMAS";
     let mut match_count = 0;
     for startx in 0i32..grid.width() {
         for starty in 0i32..grid.height() {
             for (dx, dy) in wordsearch_directions {
-                if 'search: loop {
+                let found_word = 'search: {
                     for step in 0i32..4 {
                         let step_usize = TryInto::<usize>::try_into(step).unwrap();
-                        if grid.get(startx + dx * step, starty + dy * step) != target.chars().nth(step_usize) {
+                        if grid.get(startx + dx * step, starty + dy * step)
+                            != target.chars().nth(step_usize)
+                        {
                             break 'search false;
                         }
                     }
                     break 'search true;
-                } {
+                };
+                if found_word {
                     println!("Match found at {}, {}", startx, starty);
                     match_count += 1;
                 }
@@ -59,7 +74,7 @@ fn main() -> std::io::Result<()> {
         }
     }
 
-    let cross_directions = [ (1i32, 1i32), (-1,1) ];
+    let cross_directions = [(1i32, 1i32), (-1, 1)];
     let mut cross_match_count = 0;
     for startx in 0i32..grid.width() {
         for starty in 0i32..grid.height() {
@@ -68,7 +83,9 @@ fn main() -> std::io::Result<()> {
                 for (dx, dy) in cross_directions {
                     let c1 = grid.get(startx + dx, starty + dy);
                     let c2 = grid.get(startx - dx, starty - dy);
-                    if ! ( ( c1 == Some('S') && c2 == Some('M') ) || ( c1 == Some('M') && c2 == Some('S') )) {
+                    if !((c1 == Some('S') && c2 == Some('M'))
+                        || (c1 == Some('M') && c2 == Some('S')))
+                    {
                         matches = false;
                     }
                 }
