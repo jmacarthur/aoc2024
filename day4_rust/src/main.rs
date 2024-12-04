@@ -64,7 +64,7 @@ fn main() -> std::io::Result<()> {
                             break 'search false;
                         }
                     }
-                    break 'search true;
+                    true
                 };
                 if found_word {
                     println!("Match found at {}, {}", startx, starty);
@@ -79,17 +79,19 @@ fn main() -> std::io::Result<()> {
     for startx in 0i32..grid.width() {
         for starty in 0i32..grid.height() {
             if grid.get(startx, starty) == Some('A') {
-                let mut matches = true;
-                for (dx, dy) in cross_directions {
-                    let c1 = grid.get(startx + dx, starty + dy);
-                    let c2 = grid.get(startx - dx, starty - dy);
-                    if !((c1 == Some('S') && c2 == Some('M'))
-                        || (c1 == Some('M') && c2 == Some('S')))
-                    {
-                        matches = false;
+                let found_cross = 'search: {
+                    for (dx, dy) in cross_directions {
+                        let c1 = grid.get(startx + dx, starty + dy);
+                        let c2 = grid.get(startx - dx, starty - dy);
+                        if !((c1 == Some('S') && c2 == Some('M'))
+                            || (c1 == Some('M') && c2 == Some('S')))
+                        {
+                            break 'search false;
+                        }
                     }
-                }
-                if matches {
+                    true
+                };
+                if found_cross {
                     println!("Cross match found at {}, {}", startx, starty);
                     cross_match_count += 1;
                 }
