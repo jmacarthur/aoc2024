@@ -22,6 +22,15 @@ impl<'a> Grid<'a> {
     fn height(&self) -> i32 {
         self.rows.len().try_into().unwrap()
     }
+    fn search(&self, checking_function: fn(&Grid, i32, i32) -> u32) -> u32 {
+        let mut match_count = 0;
+        for startx in 0i32..self.width() {
+            for starty in 0i32..self.height() {
+                match_count += checking_function(self, startx, starty);
+            }
+        }
+        match_count
+    }
 }
 
 fn find_words(grid: &Grid, startx: i32, starty: i32, target: &str) -> u32 {
@@ -95,22 +104,12 @@ fn main() -> std::io::Result<()> {
     }
     let grid = Grid { rows: row_vector };
 
-    let target = "XMAS";
-    let mut match_count = 0;
-    for startx in 0i32..grid.width() {
-        for starty in 0i32..grid.height() {
-            match_count += find_words(&grid, startx, starty, target);
-        }
-    }
+    let target_search_fn = |x: &Grid, y, z| find_words(x, y, z, "XMAS");
+    let wordsearch_match_count = grid.search(target_search_fn);
 
-    let mut cross_match_count = 0;
-    for startx in 0i32..grid.width() {
-        for starty in 0i32..grid.height() {
-            cross_match_count += find_crosses(&grid, startx, starty);
-        }
-    }
+    let cross_match_count = grid.search(find_crosses);
 
-    println!("Total wordsearch matches: {}", match_count);
+    println!("Total wordsearch matches: {}", wordsearch_match_count);
     println!("Total crossmas matches: {}", cross_match_count);
     Ok(())
 }
