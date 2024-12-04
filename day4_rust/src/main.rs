@@ -24,6 +24,61 @@ impl<'a> Grid<'a> {
     }
 }
 
+fn find_words(grid: &Grid, startx: i32, starty: i32, target: &str) -> u32 {
+    let wordsearch_directions = [
+        (1i32, 0i32),
+        (1, -1),
+        (0, -1),
+        (-1, -1),
+        (-1, 0),
+        (-1, 1),
+        (0, 1),
+        (1, 1),
+    ];
+
+    let mut match_count = 0;
+    for (dx, dy) in wordsearch_directions {
+        let found_word = 'search: {
+            for step in 0i32..4 {
+                let step_usize = TryInto::<usize>::try_into(step).unwrap();
+                if grid.get(startx + dx * step, starty + dy * step)
+                    != target.chars().nth(step_usize)
+                {
+                    break 'search false;
+                }
+            }
+            true
+        };
+        if found_word {
+            println!("Match found at {}, {}", startx, starty);
+            match_count += 1;
+        }
+    }
+    match_count
+}
+
+fn find_crosses(grid: &Grid, startx: i32, starty: i32) -> u32 {
+    let cross_directions = [(1i32, 1i32), (-1, 1)];
+    let mut match_count = 0;
+    if grid.get(startx, starty) == Some('A') {
+        let found_cross = 'search: {
+            for (dx, dy) in cross_directions {
+                let c1 = grid.get(startx + dx, starty + dy);
+                let c2 = grid.get(startx - dx, starty - dy);
+                if !((c1 == Some('S') && c2 == Some('M')) || (c1 == Some('M') && c2 == Some('S'))) {
+                    break 'search false;
+                }
+            }
+            true
+        };
+        if found_cross {
+            println!("Cross match found at {}, {}", startx, starty);
+            match_count += 1;
+        }
+    }
+    match_count
+}
+
 fn main() -> std::io::Result<()> {
     let mut file = File::open("input4.txt")?;
     let mut contents = String::new();
@@ -40,62 +95,18 @@ fn main() -> std::io::Result<()> {
     }
     let grid = Grid { rows: row_vector };
 
-    let wordsearch_directions = [
-        (1i32, 0i32),
-        (1, -1),
-        (0, -1),
-        (-1, -1),
-        (-1, 0),
-        (-1, 1),
-        (0, 1),
-        (1, 1),
-    ];
     let target = "XMAS";
     let mut match_count = 0;
     for startx in 0i32..grid.width() {
         for starty in 0i32..grid.height() {
-            for (dx, dy) in wordsearch_directions {
-                let found_word = 'search: {
-                    for step in 0i32..4 {
-                        let step_usize = TryInto::<usize>::try_into(step).unwrap();
-                        if grid.get(startx + dx * step, starty + dy * step)
-                            != target.chars().nth(step_usize)
-                        {
-                            break 'search false;
-                        }
-                    }
-                    true
-                };
-                if found_word {
-                    println!("Match found at {}, {}", startx, starty);
-                    match_count += 1;
-                }
-            }
+            match_count += find_words(&grid, startx, starty, target);
         }
     }
 
-    let cross_directions = [(1i32, 1i32), (-1, 1)];
     let mut cross_match_count = 0;
     for startx in 0i32..grid.width() {
         for starty in 0i32..grid.height() {
-            if grid.get(startx, starty) == Some('A') {
-                let found_cross = 'search: {
-                    for (dx, dy) in cross_directions {
-                        let c1 = grid.get(startx + dx, starty + dy);
-                        let c2 = grid.get(startx - dx, starty - dy);
-                        if !((c1 == Some('S') && c2 == Some('M'))
-                            || (c1 == Some('M') && c2 == Some('S')))
-                        {
-                            break 'search false;
-                        }
-                    }
-                    true
-                };
-                if found_cross {
-                    println!("Cross match found at {}, {}", startx, starty);
-                    cross_match_count += 1;
-                }
-            }
+            cross_match_count += find_crosses(&grid, startx, starty);
         }
     }
 
