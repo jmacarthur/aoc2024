@@ -39,7 +39,7 @@ fn find_words(grid: &Grid, startx: i32, starty: i32, target: &str) -> u32 {
     let mut match_count = 0;
     for (dx, dy) in wordsearch_directions {
         let found_word = 'search: {
-            for step in 0i32..4 {
+            for step in 0i32..target.len().try_into().unwrap() {
                 let step_usize = TryInto::<usize>::try_into(step).unwrap();
                 if grid.get(startx + dx * step, starty + dy * step)
                     != target.chars().nth(step_usize)
