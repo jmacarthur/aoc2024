@@ -10,45 +10,48 @@ fn parse_int(text: &str) -> i32 {
     }
 }
 
-fn first_out_of_place_index(report: &Vec::<i32>, ordering_rule_vector: &Vec::<(i32, i32)>) -> (usize, usize) {
-    for(page, successor) in ordering_rule_vector {
+fn out_of_place_indexes(
+    report: &[i32],
+    ordering_rule_vector: &Vec<(i32, i32)>,
+) -> Option<(usize, usize)> {
+    for (page, successor) in ordering_rule_vector {
         'test_rule: {
             let index1 = match report.iter().position(|&r| r == *page) {
                 Some(x) => x,
-                None => { 
+                None => {
                     break 'test_rule;
                 }
             };
             let index2 = match report.iter().position(|&r| r == *successor) {
                 Some(x) => x,
-                None => { break 'test_rule; }
+                None => {
+                    break 'test_rule;
+                }
             };
             if index1 > index2 {
-                println!("{:?} fails at location {} because of rule {}|{}", report, index1, page, successor);
-                return (index1, index2);
+                return Some((index1, index2));
             }
         }
     }
-    return (0,0);
+    None
 }
 
-
-fn valid(report: &Vec::<i32>, ordering_rule_vector: &Vec::<(i32, i32)>) -> bool {
-    first_out_of_place_index(report, ordering_rule_vector) == (0, 0)
+fn valid(report: &[i32], ordering_rule_vector: &Vec<(i32, i32)>) -> bool {
+    out_of_place_indexes(report, ordering_rule_vector).is_none()
 }
 
 fn main() -> std::io::Result<()> {
     let mut file = File::open("input5.txt")?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
-    let line_iterator = contents.split('\n').into_iter();
+    let line_iterator = contents.split('\n');
     let mut ordering_rule_vector = vec![];
     let mut report_page_vector = vec![];
     let mut rules_mode = true;
     for line in line_iterator {
         if line.is_empty() {
             if rules_mode {
-                rules_mode=false;
+                rules_mode = false;
             } else {
                 break;
             }
@@ -78,23 +81,19 @@ fn main() -> std::io::Result<()> {
             let mid = report[report.len() / 2];
             println!("{:?} => {} mid {}", report, report_valid, mid);
             mid_total += mid;
-        }
-        else {
-            loop {
-                let (l1, l2) = first_out_of_place_index(&report, &ordering_rule_vector);
-                if (l1, l2) == (0, 0) { break; }
-                let temp = report[l1];
-                report[l1] = report[l2];
-                report[l2] = temp;
-                println!("Reordered location {}/{} to {:?}", l1, l2, report);
-
+        } else {
+            while let Some((l1, l2)) = out_of_place_indexes(&report, &ordering_rule_vector) {
+                report.swap(l1, l2);
             }
             let mid = report[report.len() / 2];
             reordered_mid_total += mid;
         }
     }
     println!("Total of mid values for valid reports: {}", mid_total);
-    println!("Total of mid values for reordered reports: {}", reordered_mid_total);
+    println!(
+        "Total of mid values for reordered reports: {}",
+        reordered_mid_total
+    );
 
     Ok(())
 }
