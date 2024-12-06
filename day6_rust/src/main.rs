@@ -26,7 +26,7 @@ impl Grid {
 }
 
 enum TourResult {
-    Exited,
+    Exited { visited: usize },
     InfiniteLoop,
     Error
 }
@@ -55,12 +55,10 @@ fn evaluate_grid(grid: Grid, start_xpos: i32, start_ypos: i32, start_direction: 
             }
             None => {
                 println!("Exited grid from position {}, {}, direction {}", xpos, ypos, direction);
-                println!("Visited {} squares", visited.len());
-                return TourResult::Exited;
+                return TourResult::Exited{visited: visited.len()};
             }
         }
         if xpos == start_xpos && ypos == start_ypos && direction == start_direction {
-            println!("Found infinite loop");
             return TourResult::InfiniteLoop;
         }
     }
@@ -100,6 +98,16 @@ fn main() -> std::io::Result<()> {
     let mut xpos = start_xpos;
     ypos = start_ypos;
     let mut direction = 1;
-    evaluate_grid(grid, start_xpos, start_ypos, direction);
+    match evaluate_grid(grid, start_xpos, start_ypos, direction) {
+        TourResult::Exited{visited: x} => {
+            println!("Visited {} squares", x);
+        },
+        TourResult::InfiniteLoop => {
+            println!("Found infinite loop");
+        },
+        TourResult::Error => {
+            println!("Error running tour");
+        }
+    }
     Ok(())
 }
