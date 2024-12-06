@@ -110,9 +110,7 @@ fn main() -> std::io::Result<()> {
     }
     let mut grid = Grid { rows: row_vector };
     println!("Starting at {},{}", start_xpos, start_ypos);
-    let mut xpos = start_xpos;
-    ypos = start_ypos;
-    let mut direction = 1;
+    let direction = 1;
     match evaluate_grid(&grid, start_xpos, start_ypos, direction) {
         TourResult::Exited{visited: x} => {
             println!("Visited {} squares", x);
@@ -125,17 +123,17 @@ fn main() -> std::io::Result<()> {
         }
     }
     // Part 2
-    let mut blocks = 0;
+    let mut infinite_loop_positions = 0;
     for x in 0i32..grid.width() {
         for y in 0i32..grid.height() {
             if grid.get(x, y) == Some('.') {
                 grid.set(x, y, '#');
                 match evaluate_grid(&grid, start_xpos, start_ypos, direction) {
-                    TourResult::Exited{visited: x} => {
+                    TourResult::Exited { visited: _ }=> {
                     },
                     TourResult::InfiniteLoop => {
                         println!("Found infinite loop by replacing at {}, {}", x, y);
-                        blocks += 1;
+                        infinite_loop_positions += 1;
                     },
                     TourResult::Error => {
                         panic!("Error running tour");
@@ -145,6 +143,6 @@ fn main() -> std::io::Result<()> {
             }
         }
     }
-    println!("That's {} new infinite loop locations", blocks);
+    println!("That's {} new infinite loop locations", infinite_loop_positions);
     Ok(())
 }
