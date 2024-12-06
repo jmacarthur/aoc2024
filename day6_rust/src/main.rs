@@ -31,11 +31,12 @@ enum TourResult {
     Error
 }
 
-fn evaluate_grid(grid, start_xpos, start_ypos, start_direction) -> TourResult {
+fn evaluate_grid(grid: Grid, start_xpos: i32, start_ypos: i32, start_direction: usize) -> TourResult {
     let direction_delta = [ (1i32,0i32), (0, -1), (-1, 0), (0, 1) ];
-    let mut xpos = xpos;
-    let mut ypos = ypos;
+    let mut xpos = start_xpos;
+    let mut ypos = start_ypos;
     let mut direction = start_direction;
+    let mut visited = HashSet::<(i32, i32)>::new();
     loop {
         visited.insert((xpos, ypos));
         let target_x = xpos + direction_delta[direction].0;
@@ -49,17 +50,18 @@ fn evaluate_grid(grid, start_xpos, start_ypos, start_direction) -> TourResult {
                 direction = (direction+3)%4
             },
             Some(e) => {
-                panic!("Unrecognised character in grid {}", e);
+                println!("Unrecognised character in grid {}", e);
+                return TourResult::Error;
             }
             None => {
                 println!("Exited grid from position {}, {}, direction {}", xpos, ypos, direction);
                 println!("Visited {} squares", visited.len());
-                break;
+                return TourResult::Exited;
             }
         }
         if xpos == start_xpos && ypos == start_ypos && direction == start_direction {
             println!("Found infinite loop");
-            break;
+            return TourResult::InfiniteLoop;
         }
     }
 
@@ -98,7 +100,6 @@ fn main() -> std::io::Result<()> {
     let mut xpos = start_xpos;
     ypos = start_ypos;
     let mut direction = 1;
-    let mut visited = HashSet::<(i32, i32)>::new();
     evaluate_grid(grid, start_xpos, start_ypos, direction);
     Ok(())
 }
