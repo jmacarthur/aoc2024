@@ -17,6 +17,20 @@ impl Grid {
                 .nth(x.try_into().unwrap())
         }
     }
+    fn set(&mut self, x: i32, y: i32, newchar: char) {
+        if y < 0 || y >= self.height() || x < 0 || x>= self.width() {
+            return;
+        }
+        let row = TryInto::<usize>::try_into(y).unwrap();
+        let col = TryInto::<usize>::try_into(x).unwrap();
+        let start = &self.rows[row][..col];
+        let end = &self.rows[row][col+1..];
+        let mut newrow = String::new();
+        newrow.push_str(start);
+        newrow.push(newchar);
+        newrow.push_str(end);
+        self.rows[row] = newrow;
+    }
     fn width(&self) -> i32 {
         self.rows[0].len().try_into().unwrap()
     }
@@ -31,14 +45,19 @@ enum TourResult {
     Error
 }
 
-fn evaluate_grid(grid: Grid, start_xpos: i32, start_ypos: i32, start_direction: usize) -> TourResult {
+fn evaluate_grid(grid: &Grid, start_xpos: i32, start_ypos: i32, start_direction: usize) -> TourResult {
     let direction_delta = [ (1i32,0i32), (0, -1), (-1, 0), (0, 1) ];
     let mut xpos = start_xpos;
     let mut ypos = start_ypos;
     let mut direction = start_direction;
     let mut visited = HashSet::<(i32, i32)>::new();
+    let mut visited_with_direction = HashSet::<(i32, i32, usize)>::new();
     loop {
         visited.insert((xpos, ypos));
+        if visited_with_direction.contains(&(xpos, ypos, direction)) {
+            return TourResult::InfiniteLoop;
+        }
+        visited_with_direction.insert((xpos, ypos, direction));
         let target_x = xpos + direction_delta[direction].0;
         let target_y = ypos + direction_delta[direction].1;
         match grid.get(target_x, target_y) {
@@ -54,15 +73,11 @@ fn evaluate_grid(grid: Grid, start_xpos: i32, start_ypos: i32, start_direction: 
                 return TourResult::Error;
             }
             None => {
-                println!("Exited grid from position {}, {}, direction {}", xpos, ypos, direction);
+                //println!("Exited grid from position {}, {}, direction {}", xpos, ypos, direction);
                 return TourResult::Exited{visited: visited.len()};
             }
         }
-        if xpos == start_xpos && ypos == start_ypos && direction == start_direction {
-            return TourResult::InfiniteLoop;
-        }
     }
-
 }
 
 fn main() -> std::io::Result<()> {
@@ -93,12 +108,12 @@ fn main() -> std::io::Result<()> {
             ypos += 1;
         }
     }
-    let grid = Grid { rows: row_vector };
+    let mut grid = Grid { rows: row_vector };
     println!("Starting at {},{}", start_xpos, start_ypos);
     let mut xpos = start_xpos;
     ypos = start_ypos;
     let mut direction = 1;
-    match evaluate_grid(grid, start_xpos, start_ypos, direction) {
+    match evaluate_grid(&grid, start_xpos, start_ypos, direction) {
         TourResult::Exited{visited: x} => {
             println!("Visited {} squares", x);
         },
@@ -109,5 +124,27 @@ fn main() -> std::io::Result<()> {
             println!("Error running tour");
         }
     }
+    // Part 2
+    let mut blocks = 0;
+    for x in 0i32..grid.width() {
+        for y in 0i32..grid.height() {
+            if grid.get(x, y) == Some('.') {
+                grid.set(x, y, '#');
+                match evaluate_grid(&grid, start_xpos, start_ypos, direction) {
+                    TourResult::Exited{visited: x} => {
+                    },
+                    TourResult::InfiniteLoop => {
+                        println!("Found infinite loop by replacing at {}, {}", x, y);
+                        blocks += 1;
+                    },
+                    TourResult::Error => {
+                        panic!("Error running tour");
+                    }
+                }
+                grid.set(x, y, '.');
+            }
+        }
+    }
+    println!("That's {} new infinite loop locations", blocks);
     Ok(())
 }
