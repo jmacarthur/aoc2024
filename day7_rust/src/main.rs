@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::prelude::*;
-use strum_macros::EnumIter;
 
 fn parse_int(text: &str) -> i64 {
     match text.parse() {
@@ -11,7 +10,6 @@ fn parse_int(text: &str) -> i64 {
     }
 }
 
-#[derive(EnumIter)]
 enum Operator {
     Add = 0,
     Multiply = 1,
