@@ -38,39 +38,45 @@ fn numeric_concat(a: i64, b: &i64) -> i64 {
     parse_int(&(a.to_string() + &b.to_string()))
 }
 
+fn test_equation(equation: &Equation, num_operators: i64) -> bool {
+    let combinations =
+            num_operators.pow(TryInto::<u32>::try_into(equation.operands.len() - 1).unwrap());
+    for c in 0..combinations {
+        let mut operand_iterator = equation.operands.iter();
+        let mut total = *operand_iterator.next().unwrap();
+        for (step, operand) in operand_iterator.enumerate() {
+            // Select the operator for this step. It would be a lot simpler and arguably clearer just to
+            // match on an integer here, but this is an exercise for me to make more use of enumerations.
+            let op: Operator = ((c / num_operators
+                .pow(TryInto::<u32>::try_into(step).unwrap()))
+                % num_operators)
+                .try_into()
+                .unwrap();
+            total = match op {
+                Operator::Add => total + operand,
+                Operator::Multiply => total * operand,
+                Operator::Concatenate => numeric_concat(total, operand),
+            };
+
+            // Since all operands are 1 or above, no operation can make the total smaller, so stop processing here. We could knock out a lot more combinations
+            // this way, but the logic becomes much more complicated.
+            if total > equation.target {
+                break;
+            };
+        }
+
+        if total == equation.target {
+            return true
+        }
+    }
+    false
+}
+
 fn search_equations(equation_vector: &Vec<Equation>, num_operators: i64) -> i64 {
     let mut valid_target_total = 0;
     for equation in equation_vector {
-        let combinations =
-            num_operators.pow(TryInto::<u32>::try_into(equation.operands.len() - 1).unwrap());
-        for c in 0..combinations {
-            let mut operand_iterator = equation.operands.iter();
-            let mut total = *operand_iterator.next().unwrap();
-            for (step, operand) in operand_iterator.enumerate() {
-                // Select the operator for this step. It would be a lot simpler and arguably clearer just to
-                // match on an integer here, but this is an exercise for me to make more use of enumerations.
-                let op: Operator = ((c / num_operators
-                    .pow(TryInto::<u32>::try_into(step).unwrap()))
-                    % num_operators)
-                    .try_into()
-                    .unwrap();
-                total = match op {
-                    Operator::Add => total + operand,
-                    Operator::Multiply => total * operand,
-                    Operator::Concatenate => numeric_concat(total, operand),
-                };
-
-                // Since all operands are 1 or above, no operation can make the total smaller, so stop processing here. We could knock out a lot more combinations
-                // this way, but the logic becomes much more complicated.
-                if total > equation.target {
-                    break;
-                };
-            }
-
-            if total == equation.target {
-                valid_target_total += equation.target;
-                break;
-            }
+        if test_equation(equation, num_operators) {
+            valid_target_total += equation.target;
         }
     }
     valid_target_total
