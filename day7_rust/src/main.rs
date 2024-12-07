@@ -40,6 +40,44 @@ fn numeric_concat(a: i64, b: &i64) -> i64 {
     parse_int(&(a.to_string() + &b.to_string()))
 }
 
+fn search_equations(equation_vector: &Vec<Equation>, num_operators: i64) -> i64 {
+    let mut valid_target_total = 0;
+    for equation in equation_vector {
+        let combinations =
+            num_operators.pow(TryInto::<u32>::try_into(equation.operands.len() - 1).unwrap());
+        for c in 0..combinations {
+            let mut operand_iterator = equation.operands.iter();
+            let mut total = *operand_iterator.next().unwrap();
+            for (step, operand) in operand_iterator.enumerate() {
+                // Select the operator for this step. It would be a lot simpler and arguably clearer just to
+                // match on an integer here, but this is an exercise for me to make more use of enumerations.
+                let op: Operator = ((c / num_operators
+                    .pow(TryInto::<u32>::try_into(step).unwrap()))
+                    % num_operators)
+                    .try_into()
+                    .unwrap();
+                total = match op {
+                    Operator::Add => total + operand,
+                    Operator::Multiply => total * operand,
+                    Operator::Concatenate => numeric_concat(total, operand),
+                };
+
+                // Since all operands are 1 or above, no operation can make the total smaller, so stop processing here. We could knock out a lot more combinations
+                // this way, but the logic becomes much more complicated.
+                if total > equation.target {
+                    break;
+                };
+            }
+
+            if total == equation.target {
+                valid_target_total += equation.target;
+                break;
+            }
+        }
+    }
+    valid_target_total
+}
+
 fn main() -> std::io::Result<()> {
     let mut file = File::open("input7.txt")?;
     let mut contents = String::new();
@@ -63,7 +101,12 @@ fn main() -> std::io::Result<()> {
                 }
             };
             for operand in operand_iterator {
-                operand_vector.push(parse_int(operand));
+                let val = parse_int(operand);
+
+                // Check all values are 1 or above. This is observed in the input and useful for an optimisation later.
+                assert!(val > 0);
+
+                operand_vector.push(val);
             }
             equation_vector.push(Equation {
                 target,
@@ -72,32 +115,13 @@ fn main() -> std::io::Result<()> {
         }
     }
 
-    let mut valid_target_total = 0;
-    let operators: i64 = 3; // Change this to 2 for part 1.
-    for equation in equation_vector {
-        let combinations =
-            operators.pow(TryInto::<u32>::try_into(equation.operands.len() - 1).unwrap());
-        for c in 0..combinations {
-            let mut operand_iterator = equation.operands.iter();
-            let mut total = *operand_iterator.next().unwrap();
-            for (step, operand) in operand_iterator.enumerate() {
-                let op: Operator = ((c / operators.pow(TryInto::<u32>::try_into(step).unwrap()))
-                    % operators)
-                    .try_into()
-                    .unwrap();
-                total = match op {
-                    Operator::Add => total + operand,
-                    Operator::Multiply => total * operand,
-                    Operator::Concatenate => numeric_concat(total, operand),
-                }
-            }
-            if total == equation.target {
-                println!("Total {} vs target {}", total, equation.target);
-                valid_target_total += equation.target;
-                break;
-            }
-        }
-    }
-    println!("Sum of all valid targets: {}", valid_target_total);
+    println!(
+        "Sum of all valid targets with 2 operators: {}",
+        search_equations(&equation_vector, 2)
+    );
+    println!(
+        "Sum of all valid targets with 3 operators: {}",
+        search_equations(&equation_vector, 3)
+    );
     Ok(())
 }
