@@ -129,3 +129,20 @@ fn main() -> std::io::Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_basic() {
+    assert_eq!(test_equation(&Equation{target: 4, operands: vec![ 2, 2 ]}, 2), true );
+    assert_eq!(test_equation(&Equation{target: 100, operands: vec![ 2, 2 ]}, 2), false );
+    assert_eq!(test_equation(&Equation{target: 100, operands: vec![ 2, 2, 25 ]}, 2), true );
+    assert_eq!(test_equation(&Equation{target: 4, operands: vec![ 2, 2 ]}, 3), true );
+    assert_eq!(test_equation(&Equation{target: 22, operands: vec![ 2, 2 ]}, 2), false );
+    assert_eq!(test_equation(&Equation{target: 22, operands: vec![ 2, 2 ]}, 3), true );
+}
+
+#[test]
+fn test_advanced() {
+    assert_eq!(test_equation(&Equation{target: 12, operands: vec![ 2, 2, 3 ]}, 2), true );
+    assert_eq!(test_equation(&Equation{target: 610, operands: vec![ 2, 3, 10 ]}, 3), true );
+    assert_eq!(test_equation(&Equation{target: 410, operands: vec![ 2, 3, 10 ]}, 3), false );
+}
