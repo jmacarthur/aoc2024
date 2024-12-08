@@ -38,10 +38,14 @@ impl Grid {
     fn height(&self) -> i32 {
         self.rows.len().try_into().unwrap()
     }
+    fn inside(&self, position: (i32, i32)) -> bool {
+        let (x, y) = position;
+        x >=0 && x < self.width() && y >= 0 && y < self.height()
+    }
 }
 
 fn main() -> std::io::Result<()> {
-    let mut file = File::open("test8.txt")?;
+    let mut file = File::open("input8.txt")?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
     let row_iterator = contents.split('\n');
@@ -82,9 +86,36 @@ fn main() -> std::io::Result<()> {
         }
     }
 
+    let mut antinodes = HashSet::<(i32, i32)>::new();
+
     for f in antennas_by_frequency.keys() {
-        println!("Found frequency {} = {:?}", f, antennas_by_frequency.get(f));
+        let antenna_list = antennas_by_frequency.get(f).unwrap();
+        println!("Found frequency {} = {:?}", f, antenna_list);
+
+        for i in 0..antenna_list.len() {
+            for j in 0..i {
+                let (x1, y1) = antenna_list[i];
+                let (x2, y2) = antenna_list[j];
+                println!("Pair {:?} - {:?}", (x1,y1), (x2, y2));
+                let delta_x = x1 - x2;
+                let delta_y = y1 - y2;
+                for(start_x, start_y, direction) in [(x1,y1, 1), (x2,y2, -1)] {
+                    let mut step = 0;
+                    loop {
+                        let antinode_pos = (start_x + delta_x*step*direction, start_y + delta_y*step*direction);
+                        if grid.inside(antinode_pos) {
+                            antinodes.insert(antinode_pos);
+                        } else {
+                            break;
+                        }
+                        step += 1;
+                    }
+                }
+            }
+        }
     }
 
+    println!("Antinodes at: {:?}", antinodes);
+    println!("Total antinodes: {}", antinodes.len());
     Ok(())
 }
