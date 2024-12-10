@@ -59,24 +59,31 @@ fn simple_defrag(disk: &mut Vec<i32>) -> bool {
     false
 }
 
-fn find_highest_file(disk: &Vec<i32>) -> (i32, usize, usize) {
-    let mut highest = -1;
-    let mut highest_pos = None;
+fn find_file(disk: &Vec<i32>, fileid: i32) -> (usize, usize) {
     let mut file_length = 0;
+    let mut file_end_pos: Option<usize> = None;
     for (pos, n) in disk.iter().enumerate() {
-        if *n > highest {
-            highest = *n;
-            highest_pos = Some(pos);
-            file_length = 1;
-        } else if *n == highest {
+        if *n == fileid {
             file_length += 1;
+            file_end_pos = Some(pos);
         }
     }
-    if let Some(h) = highest_pos {
-        (highest, h, file_length)
+    if let Some(p) = file_end_pos {
+        (p+1-file_length, file_length)
     } else {
        panic!("No highest position found?");
     }
+}
+
+
+fn find_highest_file(disk: &Vec<i32>) -> (i32) {
+    let mut highest = -1;
+    for (pos, n) in disk.iter().enumerate() {
+        if *n > highest {
+            highest = *n;
+        }
+    }
+    highest
 }
 
 fn find_free_space(disk: &Vec<i32>, length: usize) -> Option<usize> {
@@ -94,17 +101,29 @@ fn find_free_space(disk: &Vec<i32>, length: usize) -> Option<usize> {
     None
 }
 
-fn advanced_defrag(disk: &mut Vec<i32>) {
-    let (highest_file, pos, length) = find_highest_file(disk);
-    println!("Highest file index is {} at position {}, and of length {}", highest_file, pos, length);
+fn defrag_whole_file(disk: &mut Vec<i32>, fileid: i32) -> bool {
+    let (pos, length) = find_file(disk, fileid);
     if let Some(free_space_pos) = find_free_space(disk, length) {
         println!("First free space of length {} starts at {}", length, free_space_pos);
-        for i in 0..length {
-            disk[free_space_pos+i] = disk[pos+i];
-            disk[pos+i] = -1;
+        if free_space_pos < pos {
+            for i in 0..length {
+                disk[free_space_pos+i] = disk[pos+i];
+                disk[pos+i] = -1;
+            }
         }
+        true
     } else {
         println!("No free space of length {}", length);
+        false
+    }
+}
+
+fn advanced_defrag(disk: &mut Vec<i32>) {
+    let highest_file = find_highest_file(disk);
+
+    for f in (0..=highest_file).rev() {
+        println!("Defrag {}", f);
+        defrag_whole_file(disk, f);
     }
 }
 
@@ -121,7 +140,7 @@ fn checksum(disk: &Vec<i32>) -> i64 {
 
 
 fn main() -> std::io::Result<()> {
-    let mut file = File::open("test9.txt")?;
+    let mut file = File::open("input9.txt")?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
     let mut blocks: Vec<i32> = vec![];
@@ -152,6 +171,7 @@ fn main() -> std::io::Result<()> {
     } else {
         advanced_defrag(&mut blocks);
         println!("{:?}", blocks);
+        println!("{}", checksum(&blocks));
     }
     Ok(())
 }
