@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -32,8 +30,7 @@ fn last_real_block_pos(disk: &Vec<i32>) -> Option<usize> {
 fn first_free_space_pos(disk: &Vec<i32>) -> Option<usize> {
     for (position, fileid) in (*disk).iter().enumerate() {
         if *fileid < 0 {
-            let pos = position.try_into().expect("Negative position from enumerate?");
-            return Some(pos);
+            return Some(position);
         }
     }
     None
@@ -48,18 +45,16 @@ fn simple_defrag(disk: &mut Vec<i32>) -> bool {
             }
             disk[j] = disk[i];
             disk[i] = -1;
-        
         } else {
             panic!("No free spaces on disk");
         }
-        
     } else {
         panic!("No real blocks on disk");
     }
     false
 }
 
-fn find_file(disk: &Vec<i32>, fileid: i32) -> (usize, usize) {
+fn find_file(disk: &[i32], fileid: i32) -> (usize, usize) {
     let mut file_length = 0;
     let mut file_end_pos: Option<usize> = None;
     for (pos, n) in disk.iter().enumerate() {
@@ -69,24 +64,23 @@ fn find_file(disk: &Vec<i32>, fileid: i32) -> (usize, usize) {
         }
     }
     if let Some(p) = file_end_pos {
-        (p+1-file_length, file_length)
+        (p + 1 - file_length, file_length)
     } else {
-       panic!("No highest position found?");
+        panic!("No highest position found?");
     }
 }
 
-
-fn find_highest_file(disk: &Vec<i32>) -> (i32) {
+fn find_highest_file(disk: &[i32]) -> i32 {
     let mut highest = -1;
-    for (pos, n) in disk.iter().enumerate() {
-        if *n > highest {
-            highest = *n;
+    for fileid in disk {
+        if *fileid > highest {
+            highest = *fileid;
         }
     }
     highest
 }
 
-fn find_free_space(disk: &Vec<i32>, length: usize) -> Option<usize> {
+fn find_free_space(disk: &[i32], length: usize) -> Option<usize> {
     let mut space_length: usize = 0;
     for (pos, n) in disk.iter().enumerate() {
         if *n >= 0 {
@@ -94,21 +88,24 @@ fn find_free_space(disk: &Vec<i32>, length: usize) -> Option<usize> {
         } else {
             space_length += 1;
             if space_length >= length {
-                return Some(pos-length+1);
+                return Some(pos - length + 1);
             }
         }
     }
     None
 }
 
-fn defrag_whole_file(disk: &mut Vec<i32>, fileid: i32) -> bool {
+fn defrag_whole_file(disk: &mut [i32], fileid: i32) -> bool {
     let (pos, length) = find_file(disk, fileid);
     if let Some(free_space_pos) = find_free_space(disk, length) {
-        println!("First free space of length {} starts at {}", length, free_space_pos);
+        println!(
+            "First free space of length {} starts at {}",
+            length, free_space_pos
+        );
         if free_space_pos < pos {
             for i in 0..length {
-                disk[free_space_pos+i] = disk[pos+i];
-                disk[pos+i] = -1;
+                disk[free_space_pos + i] = disk[pos + i];
+                disk[pos + i] = -1;
             }
         }
         true
@@ -118,7 +115,7 @@ fn defrag_whole_file(disk: &mut Vec<i32>, fileid: i32) -> bool {
     }
 }
 
-fn advanced_defrag(disk: &mut Vec<i32>) {
+fn advanced_defrag(disk: &mut [i32]) {
     let highest_file = find_highest_file(disk);
 
     for f in (0..=highest_file).rev() {
@@ -127,17 +124,16 @@ fn advanced_defrag(disk: &mut Vec<i32>) {
     }
 }
 
-fn checksum(disk: &Vec<i32>) -> i64 {
+fn checksum(disk: &[i32]) -> i64 {
     let mut total = 0i64;
     for (pos, fileid) in disk.iter().enumerate() {
         if *fileid >= 0 {
-            let fnum: i64 = TryInto::<i64>::try_into(*fileid).unwrap();
+            let fnum: i64 = Into::<i64>::into(*fileid);
             total += TryInto::<i64>::try_into(pos).unwrap() * fnum;
         }
     }
     total
 }
-
 
 fn main() -> std::io::Result<()> {
     let mut file = File::open("input9.txt")?;
@@ -165,7 +161,7 @@ fn main() -> std::io::Result<()> {
     println!("{:?}", blocks);
     let part1: bool = false;
     if part1 {
-        while (!simple_defrag(&mut blocks)) {};
+        while !simple_defrag(&mut blocks) {}
         println!("{:?}", blocks);
         println!("{}", checksum(&blocks));
     } else {
