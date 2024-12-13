@@ -12,86 +12,50 @@ fn parse_field(text: &str) -> i64 {
     }
 }
 
+struct Vector {
+    x: i64,
+    y: i64
+}
+
 struct Machine {
-    a_inc_x: i64,
-    a_inc_y: i64,
-    b_inc_x: i64,
-    b_inc_y: i64,
-    target_x: i64,
-    target_y: i64,
+    a: Vector,
+    b: Vector,
+    target: Vector,
 }
 
 impl Machine {
     fn new() -> Machine {
         Machine {
-            a_inc_x: 0,
-            a_inc_y: 0,
-            b_inc_x: 0,
-            b_inc_y: 0,
-            target_x: 0,
-            target_y: 0,
+            a: Vector { x: 0, y: 0 },
+            b: Vector { x: 0, y: 0 },
+            target: Vector { x: 0, y: 0 }
         }
     }
 }
 
-fn find_ratios(m: &Machine) -> Option<(i64, i64)> {
-    let numerator = m.target_x * m.a_inc_y - m.target_y * m.a_inc_x;
-    let divisor = m.b_inc_x * m.a_inc_y - m.b_inc_y * m.a_inc_x;
+fn find_ratios(a: &Vector, b: &Vector, target: &Vector) -> Option<(i64, i64)> {
+    let numerator = target.x * a.y - target.y * a.x;
+    let divisor = b.x * a.y - b.y * a.x;
     if divisor == 0 {
         println!("Zero divisor");
         None
     } else if numerator % divisor == 0 {
-        let b = numerator / divisor;
-        /*if (m.target_x - (b*m.a_inc_x)) % m.a_inc_x == 0 {
-            return None
-        }*/
-        let a = (m.target_x - (b * m.b_inc_x)) / m.a_inc_x;
+        let b_presses = numerator / divisor;
+        let a_presses = (target.x - (b_presses * b.x)) / a.x;
         println!(
             "Found solution via method a: ({}/{}) = {}*A {}*B",
-            numerator, divisor, a, b
+            numerator, divisor, a_presses, b_presses
         );
-        if (m.a_inc_x * a + m.b_inc_x * b == m.target_x)
-            && (m.a_inc_y * a + m.b_inc_y * b == m.target_y)
+        if (a.x * a_presses + b.x * b_presses == target.x)
+            && (a.y * a_presses + b.y * b_presses == target.y)
         {
-            Some((a, b))
+            Some((a_presses, b_presses))
         } else {
             None
         }
     } else {
         println!(
             "(a) Can't reach target with whole button presses ({}/{})",
-            numerator, divisor
-        );
-        None
-    }
-}
-
-fn find_ratios_b(m: &Machine) -> Option<(i64, i64)> {
-    let numerator = m.target_x * m.b_inc_y - m.target_y * m.b_inc_x;
-    let divisor = m.a_inc_x * m.b_inc_y - m.a_inc_y * m.b_inc_x;
-    if divisor == 0 {
-        println!("Zero divisor");
-        None
-    } else if numerator % divisor == 0 {
-        let a = numerator / divisor;
-        /*if (m.target_x - (a*m.a_inc_x)) % m.b_inc_x == 0 {
-            return None
-        }*/
-        let b = (m.target_x - (a * m.a_inc_x)) / m.b_inc_x;
-        println!(
-            "Found solution via method b: ({}/{}) = {}*A {}*B",
-            numerator, divisor, a, b
-        );
-        if (m.a_inc_x * a + m.b_inc_x * b == m.target_x)
-            && (m.a_inc_y * a + m.b_inc_y * b == m.target_y)
-        {
-            Some((a, b))
-        } else {
-            None
-        }
-    } else {
-        println!(
-            "(b) Can't reach target with whole button presses ({}/{})",
             numerator, divisor
         );
         None
@@ -114,24 +78,24 @@ fn main() -> std::io::Result<()> {
 
     for line in line_iterator {
         if line.is_empty() {
-            if machine.a_inc_x > 0 {
+            if machine.a.x > 0 {
                 machines.push(machine);
             }
             machine = Machine::new();
         } else if let Some(captures) = buttona_regex.captures(line) {
-            machine.a_inc_x = parse_field(&captures[1]);
-            machine.a_inc_y = parse_field(&captures[2]);
+            machine.a.x = parse_field(&captures[1]);
+            machine.a.y = parse_field(&captures[2]);
         } else if let Some(captures) = buttonb_regex.captures(line) {
-            machine.b_inc_x = parse_field(&captures[1]);
-            machine.b_inc_y = parse_field(&captures[2]);
+            machine.b.x = parse_field(&captures[1]);
+            machine.b.y = parse_field(&captures[2]);
         } else if let Some(captures) = prize_regex.captures(line) {
-            machine.target_x = parse_field(&captures[1]) + offset;
-            machine.target_y = parse_field(&captures[2]) + offset;
+            machine.target.x = parse_field(&captures[1]) + offset;
+            machine.target.y = parse_field(&captures[2]) + offset;
         } else {
             panic!("Unmatched line: {}", line);
         }
     }
-    if machine.a_inc_x > 0 {
+    if machine.a.x > 0 {
         machines.push(machine);
     }
 
@@ -143,13 +107,13 @@ fn main() -> std::io::Result<()> {
         let mut score2 = None;
         println!(
             "Solving {} {} {} {} -> {} {}",
-            m.a_inc_x, m.a_inc_y, m.b_inc_x, m.b_inc_y, m.target_x, m.target_y
+            m.a.x, m.a.y, m.b.x, m.b.y, m.target.x, m.target.y
         );
-        if let Some((a, b)) = find_ratios(&m) {
+        if let Some((a, b)) = find_ratios(&m.a, &m.b, &m.target) {
             println!("A: {a}, B: {b}");
             score1 = Some(3 * a + b);
         }
-        if let Some((a, b)) = find_ratios_b(&m) {
+        if let Some((b, a)) = find_ratios(&m.b, &m.a, &m.target) {
             println!("A: {a}, B: {b}");
             score2 = Some(3 * a + b);
         }
