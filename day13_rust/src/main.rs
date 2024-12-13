@@ -3,14 +3,8 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 
-fn parse_field(text: &str) -> i64 {
-    match text.parse() {
-        Ok(i) => i,
-        Err(_) => {
-            panic!("Unreadable number {}", text);
-        }
-    }
-}
+mod aoc_utils;
+use crate::aoc_utils::*;
 
 struct Vector {
     x: i64,
