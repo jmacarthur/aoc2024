@@ -118,19 +118,17 @@ fn main() -> std::io::Result<()> {
                 machines.push(machine);
             }
             machine = Machine::new();
+        } else if let Some(captures) = buttona_regex.captures(line) {
+            machine.a_inc_x = parse_field(&captures[1]);
+            machine.a_inc_y = parse_field(&captures[2]);
+        } else if let Some(captures) = buttonb_regex.captures(line) {
+            machine.b_inc_x = parse_field(&captures[1]);
+            machine.b_inc_y = parse_field(&captures[2]);
+        } else if let Some(captures) = prize_regex.captures(line) {
+            machine.target_x = parse_field(&captures[1]) + offset;
+            machine.target_y = parse_field(&captures[2]) + offset;
         } else {
-            if let Some(captures) = buttona_regex.captures(line) {
-                machine.a_inc_x = parse_field(&captures[1]);
-                machine.a_inc_y = parse_field(&captures[2]);
-            } else if let Some(captures) = buttonb_regex.captures(line) {
-                machine.b_inc_x = parse_field(&captures[1]);
-                machine.b_inc_y = parse_field(&captures[2]);
-            } else if let Some(captures) = prize_regex.captures(line) {
-                machine.target_x = parse_field(&captures[1]) + offset;
-                machine.target_y = parse_field(&captures[2]) + offset;
-            } else {
-                panic!("Unmatched line: {}", line);
-            }
+            panic!("Unmatched line: {}", line);
         }
     }
     if machine.a_inc_x > 0 {
