@@ -25,6 +25,25 @@ impl FenceCollection {
             right: HashSet::<Point>::new(),
         }
     }
+    fn add_fence(&mut self, x: i32, y: i32, dx: i32, dy: i32) {
+        match (dx, dy) {
+            (1, 0) => {
+                self.right.insert((x + dx, y + dy));
+            }
+            (0, -1) => {
+                self.top.insert((x + dx, y + dy));
+            }
+            (-1, 0) => {
+                self.left.insert((x + dx, y + dy));
+            }
+            (0, 1) => {
+                self.bottom.insert((x + dx, y + dy));
+            }
+            _ => {
+                panic!("Invalid direction in add_fence ({dx}, {dy})")
+            }
+        };
+    }
 }
 
 impl Grid {
@@ -76,23 +95,7 @@ fn scan(
         for (dx, dy) in directions {
             match grid.get(x + dx, y + dy) {
                 None => {
-                    match (dx, dy) {
-                        (1, 0) => {
-                            fences.right.insert((x + dx, y + dy));
-                        }
-                        (-1, 0) => {
-                            fences.left.insert((x + dx, y + dy));
-                        }
-                        (0, -1) => {
-                            fences.top.insert((x + dx, y + dy));
-                        }
-                        (0, 1) => {
-                            fences.bottom.insert((x + dx, y + dy));
-                        }
-                        _ => {
-                            panic!();
-                        }
-                    };
+                    fences.add_fence(x, y, dx, dy);
                     perimeter += 1;
                 }
                 Some(c) => {
@@ -101,23 +104,7 @@ fn scan(
                         perimeter += p;
                         area += a;
                     } else {
-                        match (dx, dy) {
-                            (1, 0) => {
-                                fences.right.insert((x + dx, y + dy));
-                            }
-                            (-1, 0) => {
-                                fences.left.insert((x + dx, y + dy));
-                            }
-                            (0, -1) => {
-                                fences.top.insert((x + dx, y + dy));
-                            }
-                            (0, 1) => {
-                                fences.bottom.insert((x + dx, y + dy));
-                            }
-                            _ => {
-                                panic!();
-                            }
-                        };
+                        fences.add_fence(x, y, dx, dy);
                         perimeter += 1;
                     }
                 }
