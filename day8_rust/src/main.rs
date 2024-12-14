@@ -1,5 +1,5 @@
-use std::collections::HashSet;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -24,6 +24,7 @@ impl Grid {
             )
         }
     }
+    #[allow(dead_code)]
     fn set(&mut self, x: i32, y: i32, newsymbol: GridElement) {
         if y < 0 || y >= self.height() || x < 0 || x >= self.width() {
             return;
@@ -40,7 +41,7 @@ impl Grid {
     }
     fn inside(&self, position: (i32, i32)) -> bool {
         let (x, y) = position;
-        x >=0 && x < self.width() && y >= 0 && y < self.height()
+        x >= 0 && x < self.width() && y >= 0 && y < self.height()
     }
 }
 
@@ -64,24 +65,21 @@ fn main() -> std::io::Result<()> {
             assert!(grid_vector[0].len() == row.len());
         }
     }
-    let mut grid = Grid { rows: grid_vector };
+    let grid = Grid { rows: grid_vector };
 
-    let mut antennas_by_frequency = HashMap::<char, Vec::<(i32, i32)>>::new();
+    let mut antennas_by_frequency = HashMap::<char, Vec<(i32, i32)>>::new();
     for x in 0..grid.width() {
         for y in 0..grid.height() {
-            match grid.get(x,y) {
-                Some(GridElement::Antenna {frequency: f}) => {
-                    match antennas_by_frequency.get_mut(&f) {
-                        None => {
-                            let location_vector = vec![(x,y)];
-                            antennas_by_frequency.insert(f, location_vector);
-                        },
-                        Some(location_vector) => {
-                            location_vector.push((x,y));
-                        }                    
+            if let Some(GridElement::Antenna { frequency: f }) = grid.get(x, y) {
+                match antennas_by_frequency.get_mut(&f) {
+                    None => {
+                        let location_vector = vec![(x, y)];
+                        antennas_by_frequency.insert(f, location_vector);
+                    }
+                    Some(location_vector) => {
+                        location_vector.push((x, y));
                     }
                 }
-                _ => (),
             }
         }
     }
@@ -96,13 +94,16 @@ fn main() -> std::io::Result<()> {
             for j in 0..i {
                 let (x1, y1) = antenna_list[i];
                 let (x2, y2) = antenna_list[j];
-                println!("Pair {:?} - {:?}", (x1,y1), (x2, y2));
+                println!("Pair {:?} - {:?}", (x1, y1), (x2, y2));
                 let delta_x = x1 - x2;
                 let delta_y = y1 - y2;
-                for(start_x, start_y, direction) in [(x1,y1, 1), (x2,y2, -1)] {
+                for (start_x, start_y, direction) in [(x1, y1, 1), (x2, y2, -1)] {
                     let mut step = 0;
                     loop {
-                        let antinode_pos = (start_x + delta_x*step*direction, start_y + delta_y*step*direction);
+                        let antinode_pos = (
+                            start_x + delta_x * step * direction,
+                            start_y + delta_y * step * direction,
+                        );
                         if grid.inside(antinode_pos) {
                             antinodes.insert(antinode_pos);
                         } else {
