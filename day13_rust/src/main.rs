@@ -37,7 +37,7 @@ fn find_ratios(a: &Vector, b: &Vector, target: &Vector) -> Option<(i64, i64)> {
         let b_presses = numerator / divisor;
         let a_presses = (target.x - (b_presses * b.x)) / a.x;
         println!(
-            "Found solution via method a: ({}/{}) = {}*A {}*B",
+            "Found solution: ({}/{}) = {}/{}",
             numerator, divisor, a_presses, b_presses
         );
         if (a.x * a_presses + b.x * b_presses == target.x)
@@ -49,7 +49,7 @@ fn find_ratios(a: &Vector, b: &Vector, target: &Vector) -> Option<(i64, i64)> {
         }
     } else {
         println!(
-            "(a) Can't reach target with whole button presses ({}/{})",
+            "Can't reach target with whole button presses ({}/{})",
             numerator, divisor
         );
         None
