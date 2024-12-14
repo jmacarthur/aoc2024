@@ -40,15 +40,14 @@ fn numeric_concat(a: i64, b: &i64) -> i64 {
 
 fn test_equation(equation: &Equation, num_operators: i64) -> bool {
     let combinations =
-            num_operators.pow(TryInto::<u32>::try_into(equation.operands.len() - 1).unwrap());
+        num_operators.pow(TryInto::<u32>::try_into(equation.operands.len() - 1).unwrap());
     for c in 0..combinations {
         let mut operand_iterator = equation.operands.iter();
         let mut total = *operand_iterator.next().unwrap();
         for (step, operand) in operand_iterator.enumerate() {
             // Select the operator for this step. It would be a lot simpler and arguably clearer just to
             // match on an integer here, but this is an exercise for me to make more use of enumerations.
-            let op: Operator = ((c / num_operators
-                .pow(TryInto::<u32>::try_into(step).unwrap()))
+            let op: Operator = ((c / num_operators.pow(TryInto::<u32>::try_into(step).unwrap()))
                 % num_operators)
                 .try_into()
                 .unwrap();
@@ -66,7 +65,7 @@ fn test_equation(equation: &Equation, num_operators: i64) -> bool {
         }
 
         if total == equation.target {
-            return true
+            return true;
         }
     }
     false
@@ -82,13 +81,17 @@ fn search_equations(equation_vector: &Vec<Equation>, num_operators: i64) -> i64 
     valid_target_total
 }
 
-fn main() -> std::io::Result<()> {
+fn read_file_to_lines() -> std::io::Result<String> {
     let mut file = File::open("input7.txt")?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
-    let line_iterator = contents.split('\n');
+    Ok(contents)
+}
+
+fn main() -> std::io::Result<()> {
     let mut equation_vector: Vec<Equation> = vec![];
-    for line in line_iterator {
+    let file_contents = read_file_to_lines().unwrap();
+    for line in file_contents.split("\n") {
         if !line.is_empty() {
             let mut field_iterator = line.split(":");
             let target = match field_iterator.next() {
@@ -132,17 +135,98 @@ fn main() -> std::io::Result<()> {
 
 #[test]
 fn test_basic() {
-    assert_eq!(test_equation(&Equation{target: 4, operands: vec![ 2, 2 ]}, 2), true );
-    assert_eq!(test_equation(&Equation{target: 100, operands: vec![ 2, 2 ]}, 2), false );
-    assert_eq!(test_equation(&Equation{target: 100, operands: vec![ 2, 2, 25 ]}, 2), true );
-    assert_eq!(test_equation(&Equation{target: 4, operands: vec![ 2, 2 ]}, 3), true );
-    assert_eq!(test_equation(&Equation{target: 22, operands: vec![ 2, 2 ]}, 2), false );
-    assert_eq!(test_equation(&Equation{target: 22, operands: vec![ 2, 2 ]}, 3), true );
+    assert_eq!(
+        test_equation(
+            &Equation {
+                target: 4,
+                operands: vec![2, 2]
+            },
+            2
+        ),
+        true
+    );
+    assert_eq!(
+        test_equation(
+            &Equation {
+                target: 100,
+                operands: vec![2, 2]
+            },
+            2
+        ),
+        false
+    );
+    assert_eq!(
+        test_equation(
+            &Equation {
+                target: 100,
+                operands: vec![2, 2, 25]
+            },
+            2
+        ),
+        true
+    );
+    assert_eq!(
+        test_equation(
+            &Equation {
+                target: 4,
+                operands: vec![2, 2]
+            },
+            3
+        ),
+        true
+    );
+    assert_eq!(
+        test_equation(
+            &Equation {
+                target: 22,
+                operands: vec![2, 2]
+            },
+            2
+        ),
+        false
+    );
+    assert_eq!(
+        test_equation(
+            &Equation {
+                target: 22,
+                operands: vec![2, 2]
+            },
+            3
+        ),
+        true
+    );
 }
 
 #[test]
 fn test_advanced() {
-    assert_eq!(test_equation(&Equation{target: 12, operands: vec![ 2, 2, 3 ]}, 2), true );
-    assert_eq!(test_equation(&Equation{target: 610, operands: vec![ 2, 3, 10 ]}, 3), true );
-    assert_eq!(test_equation(&Equation{target: 410, operands: vec![ 2, 3, 10 ]}, 3), false );
+    assert_eq!(
+        test_equation(
+            &Equation {
+                target: 12,
+                operands: vec![2, 2, 3]
+            },
+            2
+        ),
+        true
+    );
+    assert_eq!(
+        test_equation(
+            &Equation {
+                target: 610,
+                operands: vec![2, 3, 10]
+            },
+            3
+        ),
+        true
+    );
+    assert_eq!(
+        test_equation(
+            &Equation {
+                target: 410,
+                operands: vec![2, 3, 10]
+            },
+            3
+        ),
+        false
+    );
 }
