@@ -13,12 +13,12 @@ fn combo_operand(program: &[i64], address: usize, registers: &[i64]) -> usize {
     }
 }
 
-fn run(program: &[i64], registers: &mut[i64]) -> Vec<i64> {
+fn run(program: &[i64], registers: &mut [i64]) -> Vec<i64> {
     let mut pc: usize = 0;
     let mut outputs = Vec::<i64>::new();
     loop {
         if pc >= program.len() {
-            println!("Exited due to pc being {pc}");
+            //println!("Exited due to pc being {pc}");
             break;
         }
         let opcode = program[pc];
@@ -88,21 +88,58 @@ fn main() -> std::io::Result<()> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
     let line_iterator = contents.split('\n');*/
-    let mut initial_a = 0;
+    let mut initial_a = 1;
+    let mut high_a = 1;
+    let mut low_a = 1;
+    let program: Vec<i64> = vec![2, 4, 1, 1, 7, 5, 1, 4, 0, 3, 4, 5, 5, 5, 3, 0];
+    // First, increase A until we get the same length output
     loop {
         let mut registers: Vec<i64> = vec![initial_a, 0, 0];
-        let program: Vec<i64> = vec![2, 4, 1, 1, 7, 5, 1, 4, 0, 3, 4, 5, 5, 5, 3, 0];
         let outputs = run(&program, &mut registers);
-        println!("{initial_a} -> {:?}", outputs);
-        if outputs == program {
+        if outputs.len() > program.len() {
+            high_a = initial_a;
             break;
         }
-        if outputs.len() > 16 {
+        if outputs.len() < program.len() {
+            low_a = initial_a;
+        }
+        initial_a *= 10;
+    }
+    println!("Range of initial values is between {low_a} and {high_a}");
+
+    let mut match_numbers = program.len() - 1;
+    loop {
+        let increment = if (high_a - low_a) > 100 {
+            (high_a - low_a) / 100
+        } else {
+            1
+        };
+        initial_a = low_a;
+        let mut found_match: bool = false;
+        loop {
+            let mut registers: Vec<i64> = vec![initial_a, 0, 0];
+            let outputs = run(&program, &mut registers);
+            if outputs.len() > program.len() {
+                break;
+            }
+            //println!("A: {initial_a} -> {:?}", outputs);
+            if outputs[match_numbers..] == program[match_numbers..] {
+                found_match = true;
+            } else {
+                if found_match {
+                    high_a = initial_a;
+                    break;
+                } else {
+                    low_a = initial_a;
+                }
+            }
+            initial_a += increment;
+        }
+        println!("Range of initial values is between {low_a} and {high_a} (exclusive)");
+        if match_numbers == 0 {
             break;
         }
-        initial_a += 1;
+        match_numbers -= 1;
     }
     Ok(())
 }
-
-// 202322936867371 too high
