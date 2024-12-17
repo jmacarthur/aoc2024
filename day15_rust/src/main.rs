@@ -10,127 +10,143 @@ struct Vector {
     y: i32,
 }
 
-fn actually_move(grid: &mut Grid, pos: &Vector, dx: i32, dy: i32) -> bool {
+fn move_boxes(grid: &mut Grid, pos: &Vector, dx: i32, dy: i32, test_move: bool) -> bool {
     let (target_x, target_y) = (pos.x + dx, pos.y + dy);
     match grid.get(target_x, target_y) {
         Some('.') => {
-            grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
-            grid.set(pos.x, pos.y, '.');
-            return true;
-        },
-        Some('O') => {
-            if actually_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) {
+            if !test_move {
                 grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
                 grid.set(pos.x, pos.y, '.');
-                return true;
-            } else {
-                return false;
             }
-        },
+            true
+        }
+        Some('O') => {
+            if move_boxes(
+                grid,
+                &Vector {
+                    x: target_x,
+                    y: target_y,
+                },
+                dx,
+                dy,
+                test_move,
+            ) {
+                if !test_move {
+                    grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
+                    grid.set(pos.x, pos.y, '.');
+                }
+                true
+            } else {
+                false
+            }
+        }
         Some('[') => {
             if dy != 0 {
-                if actually_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) &&
-                actually_move(grid, &Vector{x: target_x+1, y: target_y}, dx, dy) {
+                if move_boxes(
+                    grid,
+                    &Vector {
+                        x: target_x,
+                        y: target_y,
+                    },
+                    dx,
+                    dy,
+                    test_move,
+                ) && move_boxes(
+                    grid,
+                    &Vector {
+                        x: target_x + 1,
+                        y: target_y,
+                    },
+                    dx,
+                    dy,
+                    test_move,
+                ) {
+                    if !test_move {
+                        grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
+                        grid.set(pos.x, pos.y, '.');
+                    }
+                    true
+                } else {
+                    false
+                }
+            } else if move_boxes(
+                grid,
+                &Vector {
+                    x: target_x,
+                    y: target_y,
+                },
+                dx,
+                dy,
+                test_move,
+            ) {
+                if !test_move {
                     grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
                     grid.set(pos.x, pos.y, '.');
-                    return true;
-                } else {
-                    return false;
                 }
+                true
             } else {
-                if actually_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) {
-                    grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
-                    grid.set(pos.x, pos.y, '.');
-                    return true;
-                } else {
-                    return false;
-                }
+                false
             }
-        },
+        }
         Some(']') => {
             if dy != 0 {
-                if actually_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) &&
-                actually_move(grid, &Vector{x: target_x-1, y: target_y}, dx, dy) {
+                if move_boxes(
+                    grid,
+                    &Vector {
+                        x: target_x,
+                        y: target_y,
+                    },
+                    dx,
+                    dy,
+                    test_move,
+                ) && move_boxes(
+                    grid,
+                    &Vector {
+                        x: target_x - 1,
+                        y: target_y,
+                    },
+                    dx,
+                    dy,
+                    test_move,
+                ) {
+                    if !test_move {
+                        grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
+                        grid.set(pos.x, pos.y, '.');
+                    }
+                    true
+                } else {
+                    false
+                }
+            } else if move_boxes(
+                grid,
+                &Vector {
+                    x: target_x,
+                    y: target_y,
+                },
+                dx,
+                dy,
+                test_move,
+            ) {
+                if !test_move {
                     grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
                     grid.set(pos.x, pos.y, '.');
-                    return true;
-                } else {
-                    return false;
                 }
+                true
             } else {
-                if actually_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) {
-                    grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
-                    grid.set(pos.x, pos.y, '.');
-                    return true;
-                } else {
-                    return false;
-                }
+                false
             }
         }
 
-        _ => { return false; }
-    };
-    false
+        _ => false,
+    }
 }
-
-fn test_move(grid: &mut Grid, pos: &Vector, dx: i32, dy: i32) -> bool {
-    let (target_x, target_y) = (pos.x + dx, pos.y + dy);
-    match grid.get(target_x, target_y) {
-        Some('.') => {
-            return true;
-        },
-        Some('O') => {
-            if test_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) {
-                return true;
-            } else {
-                return false;
-            }
-        },
-        Some('[') => {
-            if dy != 0 {
-                if test_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) &&
-                test_move(grid, &Vector{x: target_x+1, y: target_y}, dx, dy) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                if test_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        },
-        Some(']') => {
-            if dy != 0 {
-                if test_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) &&
-                test_move(grid, &Vector{x: target_x-1, y: target_y}, dx, dy) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                if test_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        },
-
-
-        _ => { return false; }
-    };
-}
-
 
 fn gps(grid: &Grid) -> i32 {
     let mut total = 0;
     for y in 0..grid.height() {
         for x in 0..grid.width() {
-            if grid.get(x,y) == Some('O') || grid.get(x,y) == Some('[') {
-                total += 100*y+x;
+            if grid.get(x, y) == Some('O') || grid.get(x, y) == Some('[') {
+                total += 100 * y + x;
             }
         }
     }
@@ -142,11 +158,22 @@ fn widen(grid: &Grid) -> Grid {
     for y in 0..grid.height() {
         let mut row: Vec<char> = vec![];
         for x in 0..grid.width() {
-            match grid.get(x,y) {
-                Some('.') => { row.push('.'); row.push('.'); },
-                Some('#') => { row.push('#'); row.push('#'); },
-                Some('O') => { row.push('['); row.push(']');},
-                _ => {panic!("Unknown character in grid");}
+            match grid.get(x, y) {
+                Some('.') => {
+                    row.push('.');
+                    row.push('.');
+                }
+                Some('#') => {
+                    row.push('#');
+                    row.push('#');
+                }
+                Some('O') => {
+                    row.push('[');
+                    row.push(']');
+                }
+                _ => {
+                    panic!("Unknown character in grid");
+                }
             }
         }
         rows.push(row);
@@ -160,8 +187,8 @@ fn main() -> std::io::Result<()> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
     let line_iterator = contents.split('\n');
-    
-    let mut robot_pos = Vector{x: 0, y:0};
+
+    let mut robot_pos = Vector { x: 0, y: 0 };
 
     let mut reading_grid = true;
     let mut directions = String::new();
@@ -188,22 +215,29 @@ fn main() -> std::io::Result<()> {
 
     let mut grid = Grid::new(rows);
 
+    // Comment out these lines for part 1.
     grid = widen(&grid);
     robot_pos.x *= 2;
+
     println!("Robot starts at {}, {}", robot_pos.x, robot_pos.y);
     for command in directions.chars() {
         let (dx, dy) = match command {
-            '>' => (1,0),
-            '<' => (-1,0),
-            '^' => (0,-1),
-            'v' => (0,1),
-            _ => { panic!("Unknown direction command {command}");}
+            '>' => (1, 0),
+            '<' => (-1, 0),
+            '^' => (0, -1),
+            'v' => (0, 1),
+            _ => {
+                panic!("Unknown direction command {command}");
+            }
         };
-        if test_move(&mut grid, &robot_pos, dx, dy) {
-            assert!(actually_move(&mut grid, &robot_pos, dx, dy));
+        if move_boxes(&mut grid, &robot_pos, dx, dy, true) {
+            assert!(move_boxes(&mut grid, &robot_pos, dx, dy, false));
             robot_pos.x += dx;
             robot_pos.y += dy;
-            println!("{}: success, now at {}, {}", command, robot_pos.x, robot_pos.y);
+            println!(
+                "{}: success, now at {}, {}",
+                command, robot_pos.x, robot_pos.y
+            );
         } else {
             println!("{}: failed", command);
         }

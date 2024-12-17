@@ -47,7 +47,6 @@ impl Grid {
             println!("{}", row);
         }
     }
-    
 }
 
 pub fn parse_field(text: &str) -> i32 {
