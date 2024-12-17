@@ -26,7 +26,48 @@ fn actually_move(grid: &mut Grid, pos: &Vector, dx: i32, dy: i32) -> bool {
             } else {
                 return false;
             }
+        },
+        Some('[') => {
+            if dy != 0 {
+                if actually_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) &&
+                actually_move(grid, &Vector{x: target_x+1, y: target_y}, dx, dy) {
+                    grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
+                    grid.set(pos.x, pos.y, '.');
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                if actually_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) {
+                    grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
+                    grid.set(pos.x, pos.y, '.');
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        },
+        Some(']') => {
+            if dy != 0 {
+                if actually_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) &&
+                actually_move(grid, &Vector{x: target_x-1, y: target_y}, dx, dy) {
+                    grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
+                    grid.set(pos.x, pos.y, '.');
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                if actually_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) {
+                    grid.set(target_x, target_y, grid.get(pos.x, pos.y).unwrap());
+                    grid.set(pos.x, pos.y, '.');
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         }
+
         _ => { return false; }
     };
     false
@@ -44,7 +85,41 @@ fn test_move(grid: &mut Grid, pos: &Vector, dx: i32, dy: i32) -> bool {
             } else {
                 return false;
             }
-        }
+        },
+        Some('[') => {
+            if dy != 0 {
+                if test_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) &&
+                test_move(grid, &Vector{x: target_x+1, y: target_y}, dx, dy) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                if test_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        },
+        Some(']') => {
+            if dy != 0 {
+                if test_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) &&
+                test_move(grid, &Vector{x: target_x-1, y: target_y}, dx, dy) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                if test_move(grid, &Vector{x: target_x, y: target_y}, dx, dy) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        },
+
+
         _ => { return false; }
     };
 }
@@ -54,7 +129,7 @@ fn gps(grid: &Grid) -> i32 {
     let mut total = 0;
     for y in 0..grid.height() {
         for x in 0..grid.width() {
-            if grid.get(x,y) == Some('O') {
+            if grid.get(x,y) == Some('O') || grid.get(x,y) == Some('[') {
                 total += 100*y+x;
             }
         }
@@ -62,6 +137,22 @@ fn gps(grid: &Grid) -> i32 {
     total
 }
 
+fn widen(grid: &Grid) -> Grid {
+    let mut rows = vec![];
+    for y in 0..grid.height() {
+        let mut row: Vec<char> = vec![];
+        for x in 0..grid.width() {
+            match grid.get(x,y) {
+                Some('.') => { row.push('.'); row.push('.'); },
+                Some('#') => { row.push('#'); row.push('#'); },
+                Some('O') => { row.push('['); row.push(']');},
+                _ => {panic!("Unknown character in grid");}
+            }
+        }
+        rows.push(row);
+    }
+    Grid::new(rows)
+}
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -97,6 +188,8 @@ fn main() -> std::io::Result<()> {
 
     let mut grid = Grid::new(rows);
 
+    grid = widen(&grid);
+    robot_pos.x *= 2;
     println!("Robot starts at {}, {}", robot_pos.x, robot_pos.y);
     for command in directions.chars() {
         let (dx, dy) = match command {
@@ -108,9 +201,9 @@ fn main() -> std::io::Result<()> {
         };
         if test_move(&mut grid, &robot_pos, dx, dy) {
             assert!(actually_move(&mut grid, &robot_pos, dx, dy));
-            println!("{}: success", command);
             robot_pos.x += dx;
             robot_pos.y += dy;
+            println!("{}: success, now at {}, {}", command, robot_pos.x, robot_pos.y);
         } else {
             println!("{}: failed", command);
         }
