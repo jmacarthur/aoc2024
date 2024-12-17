@@ -18,7 +18,6 @@ fn run(program: &[i64], registers: &mut [i64]) -> Vec<i64> {
     let mut outputs = Vec::<i64>::new();
     loop {
         if pc >= program.len() {
-            //println!("Exited due to pc being {pc}");
             break;
         }
         let opcode = program[pc];
@@ -52,7 +51,9 @@ fn run(program: &[i64], registers: &mut [i64]) -> Vec<i64> {
                 /*bxc */
                 registers[1] ^= registers[2];
                 pc += 2;
-                /* Unclear if this should exit if the operand is outside the program */
+                /* Unclear if this should exit if the operand is outside the program. Instructions say
+                we should halt if we try to read an *opcode* outside the program, but this silently
+                reads an *operand*. */
             }
             5 => {
                 /*out */
@@ -68,8 +69,7 @@ fn run(program: &[i64], registers: &mut [i64]) -> Vec<i64> {
             }
             7 => {
                 /*cdv*/
-                let operand = combo_operand(program, pc + 1, registers);
-                let denom = 1 << operand;
+                let denom = 1 << combo_operand(program, pc + 1, registers);
                 registers[2] = registers[0] / denom;
                 pc += 2;
             }
@@ -89,9 +89,17 @@ fn main() -> std::io::Result<()> {
     file.read_to_string(&mut contents)?;
     let line_iterator = contents.split('\n');*/
     let mut initial_a = 1;
-    let mut high_a = 1;
+    let mut high_a;
     let mut low_a = 1;
     let program: Vec<i64> = vec![2, 4, 1, 1, 7, 5, 1, 4, 0, 3, 4, 5, 5, 5, 3, 0];
+
+    /* This relies on two assumptions gathered from watching behaviour of my input, but may
+    not apply to yours.
+    1) Output becomes longer as the initial value of A increases
+    2) Smaller changes in A affect the early output values, and larger changes affect the
+       later output values.
+    */
+
     // First, increase A until we get the same length output
     loop {
         let mut registers: Vec<i64> = vec![initial_a, 0, 0];
@@ -107,6 +115,8 @@ fn main() -> std::io::Result<()> {
     }
     println!("Range of initial values is between {low_a} and {high_a}");
 
+    // Now gradually step down the increment value and increase the number of output values
+    // checked at the end of the output, until we check them all.
     let mut match_numbers = program.len() - 1;
     loop {
         let increment = if (high_a - low_a) > 100 {
@@ -122,16 +132,13 @@ fn main() -> std::io::Result<()> {
             if outputs.len() > program.len() {
                 break;
             }
-            //println!("A: {initial_a} -> {:?}", outputs);
             if outputs[match_numbers..] == program[match_numbers..] {
                 found_match = true;
+            } else if found_match {
+                high_a = initial_a;
+                break;
             } else {
-                if found_match {
-                    high_a = initial_a;
-                    break;
-                } else {
-                    low_a = initial_a;
-                }
+                low_a = initial_a;
             }
             initial_a += increment;
         }
