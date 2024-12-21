@@ -15,6 +15,18 @@ fn numeric_pad_positions(c: char) -> (i32, i32) {
     }
 }
 
+fn directional_pad_positions(c: char) -> (i32, i32) {
+    match c {
+        '^' => (1,0),
+        'A' => (2,0),
+        '<' => (0,1),
+        'v' => (1,1),
+        '>' => (2,1),
+        _ => { panic!("No character {c} on the directional pad"); },
+    }
+}
+
+
 fn add_pad_routes(from_x: i32, from_y: i32, to_x: i32, to_y: i32, routes: &mut Vec::<Vec::<char>>, prefix: &mut Vec<char>) {
     let dx = (to_x - from_x).signum();
     let dy = (to_y - from_y).signum();
@@ -31,7 +43,9 @@ fn add_pad_routes(from_x: i32, from_y: i32, to_x: i32, to_y: i32, routes: &mut V
         _ => { panic!("Cannot move directly by ({}, {})", dx, dy);}
     };
     match to_next {
-        ['.', '.'] => { routes.push(prefix.clone()); },
+        ['.', '.'] => { let mut r = prefix.clone();
+            r.push('A');
+            routes.push(r); },
         [a, '.'] => {
             prefix.push(a);
             add_pad_routes(from_x + dx, from_y + dy, to_x, to_y, routes, prefix);
@@ -56,6 +70,16 @@ fn numeric_pad_routes(from: char, to: char) -> Vec::<Vec::<char>> {
     routes
 }
 
+fn directional_pad_routes(from: char, to: char) -> Vec::<Vec::<char>> {
+    let mut routes = Vec::<Vec::<char>>::new();
+    let (x1, y1) = directional_pad_positions(from);
+    let (x2, y2) = directional_pad_positions(to);
+    add_pad_routes(x1, y1, x2, y2, &mut routes, &mut vec![]);
+    routes
+}
+
+
 fn main() {
     println!("{:?}", numeric_pad_routes('1', '9'));
+    println!("{:?}", directional_pad_routes('A', '<'));
 }
