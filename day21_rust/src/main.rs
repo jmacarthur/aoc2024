@@ -1,5 +1,8 @@
 use std::collections::VecDeque;
 
+mod aoc_utils;
+use crate::aoc_utils::*;
+
 fn numeric_pad_positions(c: char) -> (i32, i32) {
     match c {
         '7' => (0,0),
@@ -28,142 +31,162 @@ fn directional_pad_positions(c: char) -> (i32, i32) {
     }
 }
 
-
-fn add_pad_routes(from_x: i32, from_y: i32, to_x: i32, to_y: i32,
-    routes: &mut Vec::<Vec::<char>>, prefix: &mut Vec<char>
-) {
-    let dx = (to_x - from_x).signum();
-    let dy = (to_y - from_y).signum();
-    let to_next = match (dx, dy) {
-        (-1,-1) => ['<', '^'],
-        (0,-1) => ['^', '.'],
-        (1,-1) => ['>', '^'],
-        (-1,0) => ['<', '.'],
-        (0,0) => ['.', '.'],
-        (1,0) => ['>', '.'],
-        (-1,1) => ['<','v'],
-        (0,1) => ['v', '.'],
-        (1,1) => ['>', 'v'],
-        _ => { panic!("Cannot move directly by ({}, {})", dx, dy);}
-    };
-    match to_next {
-        ['.', '.'] => { let mut r = prefix.clone();
-            r.push('A');
-            routes.push(r); },
-        [a, '.'] => {
-            prefix.push(a);
-            add_pad_routes(from_x + dx, from_y + dy, to_x, to_y, routes, prefix);
-            prefix.pop();
-        },
-        [a, b] => {
-            prefix.push(a);
-            add_pad_routes(from_x + dx, from_y, to_x, to_y, routes, prefix);
-            prefix.pop();
-            prefix.push(b);
-            add_pad_routes(from_x, from_y + dy, to_x, to_y, routes, prefix);
-            prefix.pop();
+fn reverse_numeric(x: i32, y:i32) -> Option<char> {
+    for c in "0123456789A".chars() {
+        if numeric_pad_positions(c) == (x,y) {
+            return Some(c);
         }
     }
+    None
 }
 
-fn numeric_pad_routes(from: char, to: char) -> Vec::<Vec::<char>> {
-    let mut routes = Vec::<Vec::<char>>::new();
-    let (x1, y1) = numeric_pad_positions(from);
-    let (x2, y2) = numeric_pad_positions(to);
-    add_pad_routes(x1, y1, x2, y2, &mut routes, &mut vec![]);
-    routes
-}
-
-fn directional_pad_routes(from: char, to: char) -> Vec::<Vec::<char>> {
-    let mut routes = Vec::<Vec::<char>>::new();
-    let (x1, y1) = directional_pad_positions(from);
-    let (x2, y2) = directional_pad_positions(to);
-    add_pad_routes(x1, y1, x2, y2, &mut routes, &mut vec![]);
-    routes
-}
-
-fn combine_numeric_routes(from: char, remaining: &mut Vec::<char>) -> Vec::<Vec::<char>> {
-    let mut routes = Vec::<Vec::<char>>::new();
-    if remaining.is_empty() {
-        return routes;
-    }
-    if let Some((next, remainder)) = remaining.split_first() {
-        for r in numeric_pad_routes(from, *next) {
-            let r2 = combine_numeric_routes(*next, &mut Vec::from(remainder));
-            if r2.is_empty() {
-                routes.push(r.clone());
-            } else {
-                for r2 in combine_numeric_routes(*next, &mut Vec::from(remainder)) {
-                    routes.push(r.clone().into_iter().chain(r2.into_iter()).collect());
-                }
-            }
+fn reverse_directional(x: i32, y:i32) -> Option<char> {
+    for c in "^<>vA".chars() {
+        if directional_pad_positions(c) == (x,y) {
+            return Some(c);
         }
     }
-    routes
+    None
 }
 
-fn combine_directional_routes(from: char, remaining: &mut Vec::<char>) -> Vec::<Vec::<char>> {
-    let mut routes = Vec::<Vec::<char>>::new();
-    if remaining.is_empty() {
-        return routes;
-    }
-    if let Some((next, remainder)) = remaining.split_first() {
-        for r in directional_pad_routes(from, *next) {
-            let r2 = combine_directional_routes(*next, &mut Vec::from(remainder));
-            if r2.is_empty() {
-                routes.push(r.clone());
-            } else {
-                for r2 in combine_directional_routes(*next, &mut Vec::from(remainder)) {
-                    routes.push(r.clone().into_iter().chain(r2.into_iter()).collect());
-                }
-            }
+
+
+fn find_route(from: char, to: char, position: impl Fn(char) -> (i32, i32),reverse_fn: impl Fn(i32, i32) -> Option<char>) -> Vec<char> {
+    let mut route = vec![];
+    let (from_x, from_y) = position(from);
+
+    let (to_x, to_y) = position(to);
+    let dx = (to_x-from_x).signum();
+    let dy = (to_y-from_y).signum();
+    let mut x = from_x;
+    let mut y = from_y;
+    let mut vertical_moves = vec![];
+    let mut horizontal_moves = vec![];
+    let mut route_invalid = false;
+    while x != to_x {
+        if dx < 0 {
+            horizontal_moves.push('<');
+            x -= 1;
+        } else {
+            horizontal_moves.push('>');
+            x += 1;
+        }
+        if reverse_fn(x, y) == None {
+            route_invalid = true;
         }
     }
-    routes
+    while y != to_y {
+        if dy < 0 {
+            vertical_moves.push('^');
+            y -= 1;
+        } else {
+            vertical_moves.push('v');
+            y += 1;
+        }
+    }
+
+    if route_invalid {
+        route.extend(vertical_moves);
+        route.extend(horizontal_moves);
+    } else {
+        route.extend(horizontal_moves);
+        route.extend(vertical_moves);
+    }
+    route.push('A');
+    route
 }
 
-fn score(route: &Vec<char>) -> i32 {
-    let mut total = 0;
-    let mut previous = '.';
+fn check_route_directional(route: Vec<char>) -> Vec<char> {
+    let (mut x, mut y) = directional_pad_positions('A');
+    let mut result = vec![];
     for c in route {
-        if *c != previous {
-            total += 1;
+        match c {
+            '<' => {x -= 1;},
+            '>' => {x += 1;},
+            '^' => {y -= 1;},
+            'v' => {y += 1;},
+            'A' => { result.push(reverse_directional(x,y).unwrap());},
+            _ => { panic!("Invalid char in sequence {c}"); }
         }
-        previous = *c;
+        if reverse_directional(x,y) == None {
+            panic!("Robot hit invalid directional position {x}, {y}");
+        }
     }
-    total
+    result
 }
 
-fn filter(routes: &Vec<Vec<char>>) -> Vec<Vec<char>> {
-    let mut newvec = vec![];
-    let mut minscore = -1;
-    for route in routes {
-        if minscore == -1 || score(route) < minscore {
-            minscore = score(route);
+fn check_route_numeric(route: Vec<char>) -> Vec<char> {
+    let (mut x, mut y) = numeric_pad_positions('A');
+    let mut result = vec![];
+    for c in route {
+        match c {
+            '<' => {x -= 1;},
+            '>' => {x += 1;},
+            '^' => {y -= 1;},
+            'v' => {y += 1;},
+            'A' => { result.push(reverse_numeric(x,y).unwrap());
+            println!("Valid press {c}");},
+            _ => { panic!("Invalid char in sequence {c}"); }
+        }
+        if reverse_numeric(x,y) == None {
+            panic!("Robot hit invalid numeric position {x}, {y}");
         }
     }
-    for route in routes {
-        if score(route) == minscore {
-            newvec.push(route.to_vec());
-        }
+    result
+}
+
+fn find_sequence(sequence: &Vec<char>) -> Vec<char> {
+    let mut route1 = vec![]; // Route on first directional pad
+    route1.extend(find_route('A', sequence[0], numeric_pad_positions, reverse_numeric));
+    for pair in sequence.windows(2) {
+        route1.extend(find_route(pair[0], pair[1], numeric_pad_positions, reverse_numeric));
     }
-    newvec
+    let mut previous_route = route1;
+    let mut route: Vec<char> = vec![];
+    for i in 0..2 {
+        route = vec![]; // Route on second directional pad
+        route.extend(find_route('A', previous_route[0], directional_pad_positions, reverse_directional));
+        for pair in previous_route.windows(2) {
+            route.extend(find_route(pair[0], pair[1], directional_pad_positions, reverse_directional));
+        }
+        previous_route = route.clone();
+    }
+    route
 }
 
 fn main() {
-    let mut sequence = Vec::from(['0', '2', '9', 'A']);
-    println!("{:?}", numeric_pad_routes('1', '9'));
-    println!("{:?}", directional_pad_routes('A', '<'));
+    let l1 = find_route('A', '1', numeric_pad_positions, reverse_numeric);
+    println!("{:?}", l1);
+    let l2 = find_route('A', '<', directional_pad_positions, reverse_directional);
+    println!("{:?}", l2);
+    
+    let input_sequences: Vec<&str> = Vec::from([
+        "671A",
+        "826A",
+        "670A",
+        "085A",
+        "283A"
+    ]);
 
-    let mut l1 = combine_numeric_routes('A', &mut sequence);
-    l1 = filter(&l1);
-    for i in 0..2 {
-        let mut l2 = vec![];
-        for mut route in l1 {
-            l2.extend(combine_directional_routes('A', &mut route));        
-        }
-        l2 = filter(&l2);
-        println!("Stage {i}: len = {}", l2[0].len());
-        l1 = vec![l2[0].clone()];
+    let test_sequences: Vec<&str> = Vec::from([
+        "029A",
+        "980A",
+        "179A",
+        "456A",
+        "379A"
+    ]);
+    
+    let sequences = test_sequences;
+
+    let mut total_checksum = 0;
+    for s in sequences {
+        let num: usize = parse_field(&s[0..3]).try_into().unwrap();
+        let route = find_sequence(&s.chars().collect());
+        total_checksum += route.len() * num;
+        println!("{:?} -> {:?}, len {}, checksum {}", s, route, route.len(), route.len()*num);
+        let validate1 = check_route_directional(check_route_directional(route));
+        println!("Validate1: {:?}", validate1);
+        println!("Validate2: {:?}", check_route_numeric(validate1));
     }
+    println!("Total checksum {}", total_checksum);
 }
