@@ -125,7 +125,7 @@ fn check_route_numeric(route: Vec<char>) -> Vec<char> {
             '^' => {y -= 1;},
             'v' => {y += 1;},
             'A' => { result.push(reverse_numeric(x,y).unwrap());
-            println!("Valid press {c}");},
+            println!("Valid press {}", reverse_numeric(x,y).unwrap());},
             _ => { panic!("Invalid char in sequence {c}"); }
         }
         if reverse_numeric(x,y) == None {
