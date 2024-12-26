@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 type Point = (i32, i32);
 
 pub struct Grid {
