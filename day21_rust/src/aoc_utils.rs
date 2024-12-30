@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 type Point = (i32, i32);
 
 pub struct Grid {
@@ -32,7 +34,7 @@ impl Grid {
     pub fn height(&self) -> i32 {
         self.rows.len().try_into().unwrap()
     }
-    #[allow(dead_code)]
+
     pub fn inside(&self, position: Point) -> bool {
         let (x, y) = position;
         x >= 0 && x < self.width() && y >= 0 && y < self.height()
