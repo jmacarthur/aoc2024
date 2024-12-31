@@ -2,6 +2,8 @@ use crate::aoc_utils::*;
 static PART1_STEPS: i32 = 2;
 
 pub fn numeric_pad_positions(c: char) -> (i32, i32) {
+    // Maps the numeric characters 0-9 and A to x,y coordinates on the
+    // numeric keypad grid.
     match c {
         '7' => (0, 0),
         '8' => (1, 0),
@@ -21,6 +23,8 @@ pub fn numeric_pad_positions(c: char) -> (i32, i32) {
 }
 
 pub fn directional_pad_positions(c: char) -> (i32, i32) {
+    // Maps the directional characters ^v<> and A to x,y coordinates on the
+    // directional keypad grid.
     match c {
         '^' => (1, 0),
         'A' => (2, 0),
@@ -34,21 +38,32 @@ pub fn directional_pad_positions(c: char) -> (i32, i32) {
 }
 
 fn reverse_numeric(x: i32, y: i32) -> Option<char> {
+    // Reverses numeric_pad_positions; finds the character at coordinates x,y on
+    // the numeric keypad.
     "0123456789A"
         .chars()
         .find(|&c| numeric_pad_positions(c) == (x, y))
 }
 
 fn reverse_directional(x: i32, y: i32) -> Option<char> {
+    // Reverses directional_pad_positions; finds the character at coordinates x,y on
+    // the directional keypad.
     "^<>vA"
         .chars()
         .find(|&c| directional_pad_positions(c) == (x, y))
 }
 
 pub fn find_route(from: char, to: char, position: impl Fn(char) -> (i32, i32)) -> Vec<char> {
+    // Find the best route from one character to another on a supplied grid.
+    // position should be directional_pad_positions or numeric_pad_positions.
+
+    // 'Best' is a choice between horizontal first and vertical first. We never interleave
+    // horizontal and vertical (e.g. "<v<") because that will always be more work for the next
+    // keypad operator. Sometimes we have to go horizontal first or vertical first to avoid
+    // the empty square on a grid. Otherwise, we prefer to do horizontal first if moving left,
+    // which reduces trips to the furthest away button.
     let mut route = vec![];
     let (from_x, from_y) = position(from);
-
     let (to_x, to_y) = position(to);
     let dx = (to_x - from_x).signum();
     let dy = (to_y - from_y).signum();
@@ -98,7 +113,8 @@ pub fn find_route(from: char, to: char, position: impl Fn(char) -> (i32, i32)) -
     route
 }
 
-pub fn check_route_directional(route: &Vec<char>) -> Vec<char> {
+fn check_route_directional(route: &Vec<char>) -> Vec<char> {
+    // Return the result of tapping 'route' on a directional keypad.
     let (mut x, mut y) = directional_pad_positions('A');
     let mut result = vec![];
     for c in route {
@@ -129,7 +145,8 @@ pub fn check_route_directional(route: &Vec<char>) -> Vec<char> {
     result
 }
 
-pub fn check_route_numeric(route: &Vec<char>) -> Vec<char> {
+fn check_route_numeric(route: &Vec<char>) -> Vec<char> {
+    // Return the result of tapping 'route' on a numeric keypad.
     let (mut x, mut y) = numeric_pad_positions('A');
     let mut result = vec![];
     for c in route {
@@ -158,22 +175,6 @@ pub fn check_route_numeric(route: &Vec<char>) -> Vec<char> {
         }
     }
     result
-}
-
-pub fn find_directional_sequence(sequence: &[char]) -> Vec<char> {
-    if sequence[0] == 'A' {
-        return vec!['A'];
-    }
-    let previous_route = sequence;
-    let mut route: Vec<char> = find_route(
-        'A',
-        previous_route[0],
-        directional_pad_positions,
-    );
-    for pair in previous_route.windows(2) {
-        route.extend(find_route(pair[0], pair[1], directional_pad_positions));
-    }
-    route
 }
 
 fn find_sequence(sequence: &Vec<char>) -> Vec<char> {
@@ -217,10 +218,10 @@ pub fn solve_part1(sequences: &Vec<&str>) -> usize {
         for _i in 1..PART1_STEPS {
             validate = check_route_directional(&validate);
         }
-        let validate3 = check_route_numeric(&validate);
+        validate = check_route_numeric(&validate);
         println!(
-            "Validate3: {:?}",
-            validate3.iter().cloned().collect::<String>()
+            "Validate result of final sequence: {:?}",
+            validate.iter().cloned().collect::<String>()
         );
     }
     println!("Total checksum {}", total_checksum);

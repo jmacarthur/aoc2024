@@ -19,6 +19,6 @@ fn main() {
 
     let sequences = input_sequences;
 
-    println!("Part 1 total checksum is {}",solve_part1(&sequences));
-    println!("Part 2 total checksum is {}",solve_part2(&sequences));
+    println!("Part 1 total checksum is {}", solve_part1(&sequences));
+    println!("Part 2 total checksum is {}", solve_part2(&sequences));
 }
