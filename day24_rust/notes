@@ -1,0 +1,16 @@
+Part 2 was solved semi-manually and relied on knowing a bit about how Konrad Zuse's Z1 computer worked. There's some detail on that at https://arxiv.org/pdf/1406.1886, on page 12.
+
+The logical operations in this challenge looked very similar to that, so I made a model of how the input should look if it was properly calculating a 45-bit sum and looking for errors. For example, anything setting a z?? variable should be the result of an XOR; if a Z wire is being set by another operation, that's a fault.
+
+It helped to rename some of the variables, for example:
+
+    x03 XOR y03 -> qtf
+    x03 AND y03 -> dcf
+
+became:
+
+    x03 XOR y03 -> e03
+    x03 AND y03 -> a03
+
+'e03' meaning exclusive-or 3, since 'x' was already in use. Naturally the other occurences of qtf and dcf were replaced as well, and the resulting file can still be used with the existing code. Finally, while my code doesn't find the errors, it does check them, and by looking at the bit patterns to see where errors occur, we get a good indication of what the lowest bit position with an error is. Errors will be propagated up by the carry chain, so it helps to start looking for errors at smaller bit positions.
+
