@@ -1,7 +1,3 @@
-use std::env;
-use std::fs::File;
-use std::io::prelude::*;
-
 fn combo_operand(program: &[i64], address: usize, registers: &[i64]) -> usize {
     let raw_value: usize = program[address].try_into().unwrap();
     if raw_value <= 3 {
